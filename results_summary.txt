@@ -1,0 +1,35 @@
+
+DATASET INFORMATION:
+   • Dataset:           Fruits-360
+   • Image Size:        100x100
+   • Total Classes:     255
+   • Training Samples:  134118
+   • Test Samples:      44694
+
+MODEL ARCHITECTURE:
+   • Type:                     Custom CNN with 4 Convolutional Blocks
+   • Total Parameters:         1,507,615
+   • Trainable Parameters:     1,504,159
+   • Non-trainable Parameters: 3,456
+
+TRAINING CONFIGURATION:
+   • Batch Size:        32
+   • Epochs Completed:  N/A (loaded from saved model)
+   • Optimizer:         Adam (lr=0.001)
+   • Data Augmentation: Yes
+
+PERFORMANCE METRICS:
+   • Final Training Accuracy: N/A (loaded from saved model)
+   • Test Accuracy:           0.9788 (97.88%)
+   • Test Loss:               0.2457
+
+TARGET ACHIEVEMENT:
+   • Target:   >80% Test Accuracy
+   • Achieved: 97.88%
+   • Status:   PASSED
+
+SAVED FILES:
+   • Best Model (H5):         D:\Master\Sem2\ACABI\Fruits_classifier\best_fruit_model.h5
+   • Final Model (Keras):     D:\Master\Sem2\ACABI\Fruits_classifier\fruits360_final_model.keras
+   • Final Model (H5 backup): D:\Master\Sem2\ACABI\Fruits_classifier\fruits360_final_model.h5
+   • Results Summary:         D:\Master\Sem2\ACABI\Fruits_classifier\results_summary.txt

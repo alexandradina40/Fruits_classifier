@@ -3,16 +3,15 @@ import kagglehub
 import tensorflow as tf
 
 # Load the best model saved during training
-from tf_keras.models import load_model
-from tf_keras import layers, models
-from tf_keras.preprocessing.image import *
-from tf_keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from tf_keras.optimizers import Adam
+from tensorflow.keras.models import load_model
+from tensorflow.keras import layers, models
+from tensorflow.keras.preprocessing.image import ImageDataGenerator, load_img, img_to_array
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from tensorflow.keras.optimizers import Adam
 
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pandas as pd
 import os
 import random
 from sklearn.metrics import classification_report, confusion_matrix
@@ -141,7 +140,7 @@ for p in possible_paths:
         print(f"\nFound dataset at: {p}")
         if os.path.exists(os.path.join(p, 'Training')) and os.path.exists(os.path.join(p, 'Test')):
             dataset_path = p
-            print(f"   ✓ Contains Training and Test folders")
+            print("   ✓ Contains Training and Test folders")
             break
         else:
             # Check subdirectories
@@ -167,7 +166,7 @@ print("="*60)
 #Get all class names
 classes = sorted(os.listdir(train_dir))
 n_classes = len(classes)
-print(f"\nDataset Statistics:")
+print("\nDataset Statistics:")
 print(f"Total number of classes: {n_classes}")
 print(f"First 10 classes: {classes[:10]}")
 print(f"Last 10 classes: {classes[-10:]}")
@@ -318,7 +317,7 @@ print("="*60)
 print("TRAINING THE MODEL")
 print("="*60)
 
-print(f"Training Configuration:")
+print("Training Configuration:")
 print(f"Epochs: {EPOCHS}")
 print(f"Batch Size: {BATCH_SIZE}")
 print(f"Training samples: {train_generator.samples}")
@@ -365,7 +364,7 @@ print("EVALUATING MODEL ON TEST SET")
 print("="*60)
 
 print("Loading best model from checkpoint...")
-best_model = load_model('/kaggle/working/best_fruit_model.h5')
+best_model = load_model('best_fruit_model.h5')
 print("Best model loaded successfully!")
 #Evaluate on test set
 print("\nRunning evaluation on test data...")
@@ -422,7 +421,7 @@ first_15_class_names = [class_names[i] for i in first_15_indices]
 mask = np.isin(true_classes, first_15_indices)
 filtered_true = true_classes[mask]
 filtered_pred = predicted_classes[mask]
-print(f"\nShowing results for first 15 classes only:")
+print("\nShowing results for first 15 classes only:")
 print(f"Total samples in these classes: {len(filtered_true)}")
 if len(filtered_true) > 0:
     report_filtered = classification_report(
@@ -460,7 +459,7 @@ for i in range(min(15, len(class_names))):
     else:
         print(f"{class_name:<30} {'0':<10} {'0':<10} {'N/A':<10}")
 #Find best and worst performing classes
-print(f"\nTop 5 Best Performing Classes:")
+print("\nTop 5 Best Performing Classes:")
 class_accuracies = []
 for i in range(len(class_names)):
     class_mask = (true_classes == i)
@@ -471,7 +470,7 @@ for i in range(len(class_names)):
 class_accuracies.sort(key=lambda x: x[1], reverse=True)
 for i, (name, acc, samples) in enumerate(class_accuracies[:5]):
     print(f"{i+1}. {name:<30}Accuracy: {acc*100:.2f}% (Samples: {samples})")
-print(f"\nBottom 5 Worst Performing Classes:")
+print("\nBottom 5 Worst Performing Classes:")
 for i, (name, acc, samples) in enumerate(class_accuracies[-5:]):
     print(f"   {i+1}. {name:<30} Accuracy: {acc*100:.2f}% (Samples: {samples})")
 #Confusion Matrix (First 15 classes)
@@ -501,7 +500,7 @@ if len(cm_true) > 0:
     plt.tight_layout()
     plt.show()
     #calculate confusion matrix statistics
-    print(f"\nConfusion Matrix Statistics:")
+    print("\nConfusion Matrix Statistics:")
     #Perclass accuracy from confusion matrix
     row_sums = cm.sum(axis=1)
     per_class_acc = cm.diagonal() / (row_sums + 1e-10)  # Add small epsilon to avoid division by zero
@@ -517,7 +516,7 @@ else:
     class_counts = Counter(true_classes)
     top_15_classes = [cls for cls, count in class_counts.most_common(15)]
     top_15_names = [class_names[cls] for cls in top_15_classes]
-    print(f"\nTop 15 most frequent classes in test set:")
+    print("\nTop 15 most frequent classes in test set:")
     for i, cls in enumerate(top_15_classes):
         print(f"   {i+1}. {class_names[cls]}: {class_counts[cls]} samples")
     #Create confusion matrix for top 15 classes
@@ -596,7 +595,7 @@ plt.suptitle('odel predoction on test mages (Green=Correct, Red=Incorrect)',
 plt.tight_layout()
 plt.show()
 
-print(f"\nSample Test Results:")
+print("\nSample Test Results:")
 print(f"Correct predictions: {correct_predictions}/{total_tested}")
 print(f"Accuracy on samples: {correct_predictions / total_tested * 100:.1f}%")
 
@@ -795,7 +794,7 @@ PERFORMANCE METRICS:
 """
 
 if history_exists:
-    summary += f"   • Training History: /kaggle/working/training_history.json\n"
+    summary += "   • Training History: /kaggle/working/training_history.json\n"
 
 print(summary)
 
