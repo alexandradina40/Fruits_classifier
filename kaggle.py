@@ -3,11 +3,11 @@ import kagglehub
 import tensorflow as tf
 
 # Load the best model saved during training
-from tf_keras.models import load_model
-from tf_keras import layers, models
-from tf_keras.preprocessing.image import *
-from tf_keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from tf_keras.optimizers import Adam
+from keras.models import load_model
+from keras import layers, models
+from keras.preprocessing.image import *
+from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from keras.optimizers import Adam
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -365,7 +365,7 @@ print("EVALUATING MODEL ON TEST SET")
 print("="*60)
 
 print("Loading best model from checkpoint...")
-best_model = load_model('/kaggle/working/best_fruit_model.h5')
+best_model = load_model(r'D:\Master\ACABI\Clasificare_fructe\best_fruit_model.h5')
 print("Best model loaded successfully!")
 #Evaluate on test set
 print("\nRunning evaluation on test data...")
@@ -702,12 +702,12 @@ print("RESULTS SUMMARY AND MODEL SAVING")
 print("="*60)
 
 #Save the final model (using recommended .keras format)
-final_model_path = '/kaggle/working/fruits360_final_model.keras'
+final_model_path = r'D:\Master\ACABI\Clasificare_fructe\fruits360_final_model.keras'
 best_model.save(final_model_path)
 print(f"Final model saved to: {final_model_path}")
 
 #Also save a backup in .h5 format if needed
-h5_backup_path = '/kaggle/working/fruits360_final_model.h5'
+h5_backup_path = r'D:\Master\ACABI\Clasificare_fructe\fruits360_final_model.h5'
 best_model.save(h5_backup_path)
 print(f"Backup model saved to: {h5_backup_path}")
 
@@ -721,7 +721,7 @@ try:
         'loss': [float(x) for x in history.history['loss']],
         'val_loss': [float(x) for x in history.history['val_loss']]
     }
-    with open('/kaggle/working/training_history.json', 'w') as f:
+    with open(r'D:\Master\ACABI\Clasificare_fructe\training_history.json', 'w') as f:
         json.dump(history_dict, f)
     print("Training history saved to: /kaggle/working/training_history.json")
     history_exists = True
@@ -800,11 +800,11 @@ if history_exists:
 print(summary)
 
 # Save summary to file
-with open('/kaggle/working/results_summary.txt', 'w') as f:
+with open(r'D:\Master\ACABI\Clasificare_fructe\results_summary.txt', 'w') as f:
     f.write(summary)
 
 print("\nAll files saved in /kaggle/working/:")
-for file in os.listdir('/kaggle/working'):
+for file in os.listdir(r'D:\Master\ACABI\Clasificare_fructe'):
     if file.endswith(('.h5', '.keras', '.json', '.txt')):
-        file_size = os.path.getsize(f'/kaggle/working/{file}') / (1024*1024)  # Size in MB
+        file_size = os.path.getsize(rf'D:\Master\ACABI\Clasificare_fructe\{file}') / (1024*1024)  # Size in MB
         print(f"   • {file:35s} ({file_size:.2f} MB)")
