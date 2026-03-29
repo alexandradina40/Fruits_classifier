@@ -1,6 +1,7 @@
 # Import necessary libraries
-import kagglehub
+import os
 import tensorflow as tf
+import kagglehub
 
 # Load the best model saved during training
 from tensorflow.keras.models import load_model
@@ -12,7 +13,7 @@ from tensorflow.keras.optimizers import Adam
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import os
+
 import random
 from sklearn.metrics import classification_report, confusion_matrix
 
@@ -105,8 +106,18 @@ def predict_and_display(image_path, model, class_names, img_size=100):
     }
 
 # Download latest version
-path = kagglehub.dataset_download("moltean/fruits")
-path = os.path.join(path, 'fruits-360_100x100', 'fruits-360')
+local_path = r'C:/Users/dupgi/.cache/kagglehub/datasets/moltean/fruits/versions/86' 
+
+# If you aren't sure where it is, run the line below once to find it:
+# print(kagglehub.dataset_download("moltean/fruits"))
+
+if os.path.exists(local_path):
+    path = os.path.join(local_path, 'fruits-360_100x100', 'fruits-360')
+    print("Using existing local dataset at:", path)
+else:
+    print("Local dataset not found, downloading...")
+    path = kagglehub.dataset_download("moltean/fruits")
+    path = os.path.join(path, 'fruits-360_100x100', 'fruits-360')
 
 print("Path to dataset files:", path)
 # Set random seeds
@@ -323,13 +334,16 @@ print(f"Batch Size: {BATCH_SIZE}")
 print(f"Training samples: {train_generator.samples}")
 print("="*60)
 
+
 history = model.fit(
-    train_generator,
-    steps_per_epoch=train_generator.samples // BATCH_SIZE,
-    epochs=EPOCHS,
-    callbacks=callbacks,
-    verbose=1
-)
+   train_generator,
+   steps_per_epoch=train_generator.samples // BATCH_SIZE,
+   epochs=EPOCHS,
+   validation_data=test_generator,
+   callbacks=callbacks,
+   verbose=1
+    )
+    
 
 print("\nTraining completed!")
 
@@ -701,31 +715,36 @@ print("RESULTS SUMMARY AND MODEL SAVING")
 print("="*60)
 
 #Save the final model (using recommended .keras format)
-final_model_path = '/kaggle/working/fruits360_final_model.keras'
+final_model_path = 'fruits360_final_model.keras'
 best_model.save(final_model_path)
 print(f"Final model saved to: {final_model_path}")
 
 #Also save a backup in .h5 format if needed
-h5_backup_path = '/kaggle/working/fruits360_final_model.h5'
+h5_backup_path = 'fruits360_final_model.h5'
 best_model.save(h5_backup_path)
 print(f"Backup model saved to: {h5_backup_path}")
 
 #Check if history exists before trying to use it
+if not os.path.exists('results'):
+    os.makedirs('results')
+
 try:
-    #Save training history
     import json
+    # Use .get() to avoid KeyError if val_metrics don't exist
     history_dict = {
-        'accuracy': [float(x) for x in history.history['accuracy']],
-        'val_accuracy': [float(x) for x in history.history['val_accuracy']],
-        'loss': [float(x) for x in history.history['loss']],
-        'val_loss': [float(x) for x in history.history['val_loss']]
+        'accuracy': [float(x) for x in history.history.get('accuracy', [])],
+        'val_accuracy': [float(x) for x in history.history.get('val_accuracy', [])],
+        'loss': [float(x) for x in history.history.get('loss', [])],
+        'val_loss': [float(x) for x in history.history.get('val_loss', [])]
     }
-    with open('/kaggle/working/training_history.json', 'w') as f:
+    
+    # Save to current local directory instead of /kaggle/working/
+    with open('training_history.json', 'w') as f:
         json.dump(history_dict, f)
-    print("Training history saved to: /kaggle/working/training_history.json")
+    print("Training history saved successfully!")
     history_exists = True
-except (NameError, AttributeError):
-    print("Training history not available - skipping history save")
+except Exception as e:
+    print(f"Error saving history: {e}")
     history_exists = False
 
 #Create comprehensive results summary
@@ -799,11 +818,11 @@ if history_exists:
 print(summary)
 
 # Save summary to file
-with open('/kaggle/working/results_summary.txt', 'w') as f:
+with open('results_summary.txt', 'w') as f:
     f.write(summary)
 
-print("\nAll files saved in /kaggle/working/:")
-for file in os.listdir('/kaggle/working'):
+print("\nAll files saved in the current folder:")
+for file in os.listdir('.'):
     if file.endswith(('.h5', '.keras', '.json', '.txt')):
-        file_size = os.path.getsize(f'/kaggle/working/{file}') / (1024*1024)  # Size in MB
+        file_size = os.path.getsize(file) / (1024*1024) 
         print(f"   • {file:35s} ({file_size:.2f} MB)")

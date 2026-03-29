@@ -1,35 +1,36 @@
 
 DATASET INFORMATION:
-   • Dataset:           Fruits-360
-   • Image Size:        100x100
-   • Total Classes:     255
-   • Training Samples:  134118
-   • Test Samples:      44694
+   • Dataset: Fruits-360
+   • Image Size: 100x100
+   • Total Classes: 45
+   • Training Samples: 22726
+   • Test Samples: 7601
 
-MODEL ARCHITECTURE:
-   • Type:                     Custom CNN with 4 Convolutional Blocks
-   • Total Parameters:         1,507,615
-   • Trainable Parameters:     1,504,159
+ MODEL ARCHITECTURE:
+   • Type: Custom CNN with 4 Convolutional Blocks
+   • Total Parameters: 1,453,645
+   • Trainable Parameters: 1,450,189
    • Non-trainable Parameters: 3,456
 
 TRAINING CONFIGURATION:
-   • Batch Size:        32
-   • Epochs Completed:  N/A (loaded from saved model)
-   • Optimizer:         Adam (lr=0.001)
+   • Batch Size: 32
+   • Epochs: 23
+   • Optimizer: Adam (lr=0.001)
    • Data Augmentation: Yes
 
 PERFORMANCE METRICS:
-   • Final Training Accuracy: N/A (loaded from saved model)
-   • Test Accuracy:           0.9788 (97.88%)
-   • Test Loss:               0.2457
+   • Final Training Accuracy: 0.9937 (99.37%)
+   • Final Validation Accuracy: 1.0000 (100.00%)
+   • Test Accuracy: 0.9883 (98.83%)
+   • Test Loss: 0.0220
+   TARGET ACHIEVEMENT:
+   • Target: >80% Test Accuracy
+   • Achieved: 98.83%
+   • Status:  PASSED
 
-TARGET ACHIEVEMENT:
-   • Target:   >80% Test Accuracy
-   • Achieved: 97.88%
-   • Status:   PASSED
-
-SAVED FILES:
-   • Best Model (H5):         D:\Master\Sem2\ACABI\Fruits_classifier\best_fruit_model.h5
-   • Final Model (Keras):     D:\Master\Sem2\ACABI\Fruits_classifier\fruits360_final_model.keras
-   • Final Model (H5 backup): D:\Master\Sem2\ACABI\Fruits_classifier\fruits360_final_model.h5
-   • Results Summary:         D:\Master\Sem2\ACABI\Fruits_classifier\results_summary.txt
+   SAVED FILES:
+   • Best Model: best_fruit_model.h5
+   • Final Model (Keras): fruits360_final_model.keras
+   • Final Model (H5 backup): fruits360_final_model.h5
+   • Results Summary: results_summary.txt
+   • Training History: training_history.json
