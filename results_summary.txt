@@ -1,0 +1,35 @@
+
+DATASET INFORMATION:
+   • Dataset: Fruits-360
+   • Image Size: 100x100
+   • Total Classes: 45
+   • Training Samples: 22726
+   • Test Samples: 7601
+
+ MODEL ARCHITECTURE:
+   • Type: Custom CNN with 4 Convolutional Blocks
+   • Total Parameters: 1,453,645
+   • Trainable Parameters: 1,450,189
+   • Non-trainable Parameters: 3,456
+
+TRAINING CONFIGURATION:
+   • Batch Size: 32
+   • Epochs: N/A
+   • Optimizer: Adam (lr=0.001)
+   • Data Augmentation: Yes
+
+PERFORMANCE METRICS:
+   • Final Training Accuracy: 0.0000 (0.00%)
+   • Final Validation Accuracy: 0.0000 (0.00%)
+   • Test Accuracy: 0.9863 (98.63%)
+   • Test Loss: 0.0547
+   TARGET ACHIEVEMENT:
+   • Target: >80% Test Accuracy
+   • Achieved: 98.63%
+   • Status:  PASSED
+
+   SAVED FILES:
+   • Best Model: /kaggle/working/best_fruit_model.h5
+   • Final Model (Keras): /kaggle/working/fruits360_final_model.keras
+   • Final Model (H5 backup): /kaggle/working/fruits360_final_model.h5
+   • Results Summary: /kaggle/working/results_summary.txt
