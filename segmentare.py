@@ -1,41 +1,27 @@
-"""
-Fruit Segmentation Script - Universal Pose-Invariant Version
-============================================================
-Elimină fundalul și bețele din imagini cu fructe, indiferent de
-orientarea, unghiul sau forma fructului.
-
-UTILIZARE:
-    python segment_fruit_universal.py
-
-DEPENDENȚE RECOMANDATE:
-    pip install rembg pillow onnxruntime opencv-python numpy
-"""
-
 import sys
 from pathlib import Path
 from PIL import Image
 import numpy as np
 import cv2
+from rembg import remove
+#   pip install rembg pillow onnxruntime opencv-python numpy
 
 # ──────────────────────────────────────────────
 # CONFIGURARE
 # ──────────────────────────────────────────────
+
 INPUT_FOLDER = r"D:\Master\ACABI\Clasificare_fructe\Imagini_fructe"
 OUTPUT_FOLDER = "output_segmented"
-EXTENSIONS = {".JPG", ".jpg", ".jpeg", ".png"}
+EXTENSION = {".JPG"}
 # ──────────────────────────────────────────────
 
-# ══════════════════════════════════════════════════════════════════
-# UTILS
-# ══════════════════════════════════════════════════════════════════
-
-def composite_on_white(rgba_img: Image.Image) -> Image.Image:
+def composite_on_white(rgba_img) -> Image.Image:
     """Lipește fructul decupat pe un fundal complet alb."""
     background = Image.new("RGB", rgba_img.size, (255, 255, 255))
     background.paste(rgba_img, mask=rgba_img.split()[3])
     return background
 
-def keep_largest_component(binary_mask: np.ndarray) -> np.ndarray:
+def keep_largest_component(binary_mask) -> np.ndarray:
     """Păstrează doar cea mai mare insulă de pixeli (fructul), eliminând zgomotul."""
     binary = (binary_mask > 128).astype(np.uint8) * 255
     num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(binary, connectivity=8)
@@ -49,7 +35,7 @@ def keep_largest_component(binary_mask: np.ndarray) -> np.ndarray:
     out[labels == largest_label] = 255
     return out
 
-def fill_holes(binary_mask: np.ndarray) -> np.ndarray:
+def fill_holes(binary_mask) -> np.ndarray:
     """Umple eventualele găuri apărute în interiorul fructului (ex: reflexii)."""
     binary = (binary_mask > 128).astype(np.uint8) * 255
     h, w = binary.shape
@@ -63,11 +49,9 @@ def fill_holes(binary_mask: np.ndarray) -> np.ndarray:
 # ELIMINARE BĂȚ - METODA UNIVERSALĂ (INVARIANTĂ LA ROTAȚIE)
 # ══════════════════════════════════════════════════════════════════
 
-def remove_stick_universal(binary_mask: np.ndarray, img_rgb: np.ndarray, img_name: str = "debug") -> np.ndarray:
-    import cv2
-    import numpy as np
+def remove_stick_universal(binary_mask) -> np.ndarray:
 
-    img_h, img_w = binary_mask.shape
+    _, img_w = binary_mask.shape
 
     # 1. Setăm "radiera" (kernel-ul) să fie un pic mai groasă decât bățul.
     # Estimăm grosimea bățului la aproximativ 5% din lățimea imaginii.
@@ -127,26 +111,14 @@ def remove_stick_universal(binary_mask: np.ndarray, img_rgb: np.ndarray, img_nam
 # PIPELINE PRINCIPAL & SEGMENTARE
 # ══════════════════════════════════════════════════════════════════
 
-def apply_segmentation_pipeline(img: Image.Image, img_rgb: np.ndarray, use_rembg: bool) -> Image.Image:
+def apply_segmentation_pipeline(img) -> Image.Image:
     # Pasul 1: Extragerea brută a fundalului
-    if use_rembg:
-        from rembg import remove
-        rgba_img = remove(img)
-        alpha = np.array(rgba_img.split()[3])
-        binary_mask = (alpha > 128).astype(np.uint8) * 255
-    else:
-        # Fallback GrabCut (mai puțin precis, poate "mușca" din fruct)
-        img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
-        h, w = img_bgr.shape[:2]
-        margin_x, margin_y = int(w * 0.12), int(h * 0.08)
-        rect = (margin_x, margin_y, w - 2 * margin_x, h - 2 * margin_y)
-        mask = np.zeros((h, w), np.uint8)
-        bgd_model, fgd_model = np.zeros((1, 65), np.float64), np.zeros((1, 65), np.float64)
-        cv2.grabCut(img_bgr, mask, rect, bgd_model, fgd_model, 10, cv2.GC_INIT_WITH_RECT)
-        binary_mask = np.where((mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
+    rgba_img = remove(img)
+    alpha = np.array(rgba_img.split()[3])
+    binary_mask = (alpha > 128).astype(np.uint8) * 255
 
     # Pasul 2: Eliminarea inteligentă a bețelor (funcționează la orice unghi)
-    clean_mask = remove_stick_universal(binary_mask, img_rgb)
+    clean_mask = remove_stick_universal(binary_mask)
 
     # Pasul 3: Curățare finală (păstrăm doar fructul, închidem marginile tăiate)
     clean_mask = keep_largest_component(clean_mask)
@@ -166,37 +138,22 @@ def apply_segmentation_pipeline(img: Image.Image, img_rgb: np.ndarray, use_rembg
 # MAIN
 # ══════════════════════════════════════════════════════════════════
 
-def process_image(input_path: Path, output_folder: Path, use_rembg: bool) -> None:
+def process_image(input_path, output_folder) -> None:
     print(f"  Procesez: {input_path.name} ...", end=" ", flush=True)
 
-    try:
-        pil_img = Image.open(input_path).convert("RGBA")
-        img_rgb = np.array(pil_img.convert("RGB"))
+    pil_img = Image.open(input_path).convert("RGB")
+    result = apply_segmentation_pipeline(pil_img)
 
-        result = apply_segmentation_pipeline(pil_img, img_rgb, use_rembg)
-
-        out_path = output_folder / f"{input_path.stem}_segmented.jpg"
-        result.save(out_path, "JPEG", quality=95)
-        print(f"✓  → {out_path.name}")
-
-    except Exception as e:
-        print(f"✗ eroare: {e}")
+    out_path = output_folder / f"{input_path.stem}_segmented.jpg"
+    result.save(out_path, "JPEG", quality=95)
+    print(f"✓  → {out_path.name}")
 
 def main():
     input_folder = Path(INPUT_FOLDER)
     output_folder = Path(OUTPUT_FOLDER)
     output_folder.mkdir(exist_ok=True)
 
-    use_rembg = False
-    try:
-        import rembg  # noqa: F401
-        use_rembg = True
-        print("✔ rembg detectat — extragere superioară a prim-planului\n")
-    except ImportError:
-        print("⚠ rembg absent — fallback GrabCut activat.\n")
-        print("  Recomandare fermă: pip install rembg onnxruntime\n")
-
-    images = [p for p in input_folder.iterdir() if p.suffix.upper() in EXTENSIONS and "_segmented" not in p.name]
+    images = [p for p in input_folder.iterdir() if p.suffix.upper() in EXTENSION]
 
     if not images:
         print(f"Nicio imagine găsită în '{input_folder}'.")
@@ -204,9 +161,9 @@ def main():
 
     print(f"Imagini găsite: {len(images)}\n")
     for img_path in sorted(images):
-        process_image(img_path, output_folder, use_rembg)
+        process_image(img_path, output_folder)
 
-    print(f"\n✅ Gata! Fructele au fost decupate pe fundal alb.")
+    print(f"\n Fructele au fost decupate pe fundal alb.")
 
 if __name__ == "__main__":
     main()
