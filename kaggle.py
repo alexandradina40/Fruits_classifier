@@ -113,7 +113,9 @@ SKIP_TRAINING = True  # schimbi în False când vrei să reantrenezi
 # Download latest version
 # path = kagglehub.dataset_download("moltean/fruits")
 # path = os.path.join(path, 'fruits-360_100x100', 'fruits-360')
-path = r'C:\Users\alexa\.cache\kagglehub\datasets\moltean\fruits\versions\86\fruits-360_100x100\fruits-360'
+#path = r'C:\Users\alexa\.cache\kagglehub\datasets\moltean\fruits\versions\86\fruits-360_100x100\fruits-360'
+#path = r'D:\Master\ACABI\Clasificare_fructe\output_100x100'
+path = r'D:\Master\ACABI\Clasificare_fructe\Test-multe-clase'
 
 print("Path to dataset files:", path)
 
@@ -224,16 +226,7 @@ print(f"Image Size: {IMG_SIZE}x{IMG_SIZE}")
 print(f"Batch Size: {BATCH_SIZE}")
 
 # Data augmentation for training
-train_datagen = ImageDataGenerator(
-    rescale=1./255,
-    rotation_range=20,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    shear_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True,
-    fill_mode='nearest',
-)
+train_datagen = ImageDataGenerator( rescale=1./255, rotation_range=20, width_shift_range=0.2, height_shift_range=0.2, shear_range=0.2, zoom_range=0.2, horizontal_flip=True, fill_mode='nearest', )
 
 # Only rescaling for test data
 test_datagen = ImageDataGenerator(rescale=1./255)
@@ -243,7 +236,6 @@ train_generator = train_datagen.flow_from_directory(
     target_size=(IMG_SIZE, IMG_SIZE),
     batch_size=BATCH_SIZE,
     class_mode='categorical',
-    subset='training',
     shuffle=True,
     seed=42
 )
@@ -714,7 +706,7 @@ for i in range(total_tested):
             status = "Right"
             color = 'green'
         else:
-            status = 'worng'
+            status = 'wrong'
             color = 'red'
 
         # Display first 20 images only
@@ -838,7 +830,7 @@ PERFORMANCE METRICS:
    TARGET ACHIEVEMENT:
    • Target: >80% Test Accuracy
    • Achieved: {test_accuracy*100:.2f}%
-   • Status: {' PASSED' if test_accuracy > 0.80 else '❌ NOT MET'}
+   • Status: {' PASSED' if test_accuracy > 0.80 else ' NOT MET'}
 
    SAVED FILES:
    • Best Model: /kaggle/working/best_fruit_model.h5
