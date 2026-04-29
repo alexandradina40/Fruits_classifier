@@ -114,8 +114,8 @@ SKIP_TRAINING = True  # schimbi în False când vrei să reantrenezi
 # path = kagglehub.dataset_download("moltean/fruits")
 # path = os.path.join(path, 'fruits-360_100x100', 'fruits-360')
 #path = r'C:\Users\alexa\.cache\kagglehub\datasets\moltean\fruits\versions\86\fruits-360_100x100\fruits-360'
-#path = r'D:\Master\ACABI\Clasificare_fructe\output_100x100'
-path = r'D:\Master\ACABI\Clasificare_fructe\Test-multe-clase'
+path = r'D:\Master\ACABI\Clasificare_fructe\output_100x100_augmented'
+#path = r'D:\Master\ACABI\Clasificare_fructe\Test-multe-clase'
 
 print("Path to dataset files:", path)
 

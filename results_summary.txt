@@ -2,14 +2,14 @@
 DATASET INFORMATION:
    • Dataset: Fruits-360
    • Image Size: 100x100
-   • Total Classes: 45
-   • Training Samples: 20444
-   • Test Samples: 6843
+   • Total Classes: 6
+   • Training Samples: 1440
+   • Test Samples: 480
 
  MODEL ARCHITECTURE:
    • Type: Custom CNN with 4 Convolutional Blocks
-   • Total Parameters: 1,453,645
-   • Trainable Parameters: 1,450,189
+   • Total Parameters: 1,443,622
+   • Trainable Parameters: 1,440,166
    • Non-trainable Parameters: 3,456
 
 TRAINING CONFIGURATION:
@@ -21,11 +21,11 @@ TRAINING CONFIGURATION:
 PERFORMANCE METRICS:
    • Final Training Accuracy: 0.0000 (0.00%)
    • Final Validation Accuracy: 0.0000 (0.00%)
-   • Test Accuracy: 0.9781 (97.81%)
-   • Test Loss: 0.2393
+   • Test Accuracy: 0.9292 (92.92%)
+   • Test Loss: 0.2490
    TARGET ACHIEVEMENT:
    • Target: >80% Test Accuracy
-   • Achieved: 97.81%
+   • Achieved: 92.92%
    • Status:  PASSED
 
    SAVED FILES:
