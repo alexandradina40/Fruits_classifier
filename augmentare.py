@@ -9,12 +9,10 @@ import numpy as np
 # CONFIGURARE
 # ─────────────────────────────────────────────
 
-INPUT_DIR  = r"D:\Master\ACABI\Clasificare_fructe\output_100x100\Test"
-OUTPUT_DIR = r"D:\Master\ACABI\Clasificare_fructe\output_100x100_augmented\Test"
+INPUT_DIR  = r"D:\Master\ACABI\Clasificare_fructe\baza de date"
+OUTPUT_DIR = r"D:\Master\ACABI\Clasificare_fructe\baza de date augmented"
 
-# Numărul țintă de imagini per clasă după augmentare
-# Pune None pentru a dubla pur și simplu fiecare clasă
-TARGET_PER_CLASS = 80
+TARGET_PER_CLASS = 694
 
 # Dacă True, copiază și imaginile originale în OUTPUT_DIR
 INCLUDE_ORIGINALS = True

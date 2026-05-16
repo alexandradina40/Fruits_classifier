@@ -5,7 +5,7 @@ from pathlib import Path
 # =========================
 # CONFIGURARE
 # =========================
-BASE_DIR = Path(r"D:\Master\ACABI\Clasificare_fructe\output_100x100")
+BASE_DIR = Path(r"D:\Master\ACABI\Clasificare_fructe\BAZA-DE-DATE-100x100")
 TRAIN_DIR = BASE_DIR / "Training"
 TEST_DIR = BASE_DIR / "Test"
 

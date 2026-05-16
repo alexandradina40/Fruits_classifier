@@ -1,5 +1,4 @@
 # Import necessary libraries
-import kagglehub
 import tensorflow as tf
 
 from keras.models import load_model
@@ -18,65 +17,43 @@ import os
 import random
 from sklearn.metrics import classification_report, confusion_matrix
 
+# ── Director unde se salvează toate imaginile generate ──────────────────────
+SAVE_DIR = r'D:\Master\ACABI\Clasificare_fructe\rezultate_poze'
+os.makedirs(SAVE_DIR, exist_ok=True)
+
+def save_fig(name):
+    """Salvează figura curentă în SAVE_DIR."""
+    out = os.path.join(SAVE_DIR, name)
+    plt.savefig(out, dpi=150, bbox_inches='tight')
+    print(f"✓ Imagine salvată: {out}")
+
 def create_cnn_model(input_shape=(100, 100, 3), num_classes=None):
     """
-    Create a custom CNN architecture for fruit classification
-    Architecture:
-    - 4 Convolutional blocks with increasing filters
-    - Batch Normalization after each conv layer
-    - MaxPooling for dimensionality reduction
-    - Dropout for regularization
-    - Global Average Pooling instead of Flatten
-    - Dense layers with dropout for classification
+    Transfer Learning cu MobileNetV2 pretrained pe ImageNet.
+    Strategie: îngheață primele straturi, antrenează ultimele 30.
     """
-
     if num_classes is None:
         num_classes = len(class_names)
 
+    base_model = tf.keras.applications.MobileNetV2(
+        input_shape=input_shape,
+        include_top=False,
+        weights='imagenet'
+    )
+
+    # Îngheață tot, apoi dezgheață ultimele 30 de straturi
+    base_model.trainable = True
+    for layer in base_model.layers[:-30]:
+        layer.trainable = False
+
     model = models.Sequential([
-        # 1st convolutionalblock
-        layers.Conv2D(32, (3, 3), activation='relu', padding='same',
-                      input_shape=input_shape, name='conv1_1'),
-        layers.BatchNormalization(),
-        layers.Conv2D(32, (3, 3), activation='relu', padding='same', name='conv1_2'),
-        layers.BatchNormalization(),
-        layers.MaxPooling2D(2, 2, name='pool1'),
-        layers.Dropout(0.25, name='dropout1'),
-
-        # second convolutionalblock
-        layers.Conv2D(64, (3, 3), activation='relu', padding='same', name='conv2_1'),
-        layers.BatchNormalization(),
-        layers.Conv2D(64, (3, 3), activation='relu', padding='same', name='conv2_2'),
-        layers.BatchNormalization(),
-        layers.MaxPooling2D(2, 2, name='pool2'),
-        layers.Dropout(0.25, name='dropout2'),
-
-        # 3rd convolutional block
-        layers.Conv2D(128, (3, 3), activation='relu', padding='same', name='conv3_1'),
-        layers.BatchNormalization(),
-        layers.Conv2D(128, (3, 3), activation='relu', padding='same', name='conv3_2'),
-        layers.BatchNormalization(),
-        layers.MaxPooling2D(2, 2, name='pool3'),
-        layers.Dropout(0.25, name='dropout3'),
-
-        # fourth convolutional block
-        layers.Conv2D(256, (3, 3), activation='relu', padding='same', name='conv4_1'),
-        layers.BatchNormalization(),
-        layers.Conv2D(256, (3, 3), activation='relu', padding='same', name='conv4_2'),
-        layers.BatchNormalization(),
-        layers.MaxPooling2D(2, 2, name='pool4'),
-        layers.Dropout(0.25, name='dropout4'),
-
-        # Classification head
+        base_model,
         layers.GlobalAveragePooling2D(name='gap'),
-        layers.Dense(512, activation='relu', name='dense1'),
-        layers.BatchNormalization(),
-        layers.Dropout(0.5, name='dropout5'),
-        layers.Dense(256, activation='relu', name='dense2'),
-        layers.BatchNormalization(),
-        layers.Dropout(0.5, name='dropout6'),
+        layers.Dense(256, activation='relu', name='dense1'),
+        layers.BatchNormalization(momentum=0.9),
+        layers.Dropout(0.5, name='dropout1'),
         layers.Dense(num_classes, activation='softmax', name='output')
-    ], name='Fruits360_CNN')
+    ], name='MobileNetV2_FruitsCNN')
 
     return model
 
@@ -114,8 +91,9 @@ SKIP_TRAINING = True  # schimbi în False când vrei să reantrenezi
 # path = kagglehub.dataset_download("moltean/fruits")
 # path = os.path.join(path, 'fruits-360_100x100', 'fruits-360')
 #path = r'C:\Users\alexa\.cache\kagglehub\datasets\moltean\fruits\versions\86\fruits-360_100x100\fruits-360'
-path = r'D:\Master\ACABI\Clasificare_fructe\output_100x100_augmented'
-#path = r'D:\Master\ACABI\Clasificare_fructe\Test-multe-clase'
+#path = r'D:\Master\ACABI\Clasificare_fructe\BAZA-DE-DATE-ACHIZITIONATA-TRAINING-TEST'
+#path = r'D:\Master\ACABI\Clasificare_fructe\fruits-360_6_clase'
+#path = r'D:\Master\ACABI\Clasificare_fructe\Combined_Dataset'
 
 print("Path to dataset files:", path)
 
@@ -211,6 +189,7 @@ for i in range(10):
 
 plt.suptitle('Sample Images from Fruits-360 Dataset', fontsize=16, fontweight='bold', y=1.02)
 plt.tight_layout()
+save_fig('dataset_sample_images.png')
 plt.show()
 
 print("=" * 60)
@@ -225,21 +204,33 @@ EPOCHS = 30
 print(f"Image Size: {IMG_SIZE}x{IMG_SIZE}")
 print(f"Batch Size: {BATCH_SIZE}")
 
-# Data augmentation for training
-train_datagen = ImageDataGenerator( rescale=1./255, rotation_range=20, width_shift_range=0.2, height_shift_range=0.2, shear_range=0.2, zoom_range=0.2, horizontal_flip=True, fill_mode='nearest', )
+# MODIFICAREA AICI: Introducem validation_split=0.2 pentru datele de antrenament
+train_datagen = ImageDataGenerator(rescale=1./255, validation_split=0.2)
+test_datagen  = ImageDataGenerator(rescale=1./255)
 
-# Only rescaling for test data
-test_datagen = ImageDataGenerator(rescale=1./255)
-
+# Generator pentru antrenament (80% din folderul Training)
 train_generator = train_datagen.flow_from_directory(
     train_dir,
     target_size=(IMG_SIZE, IMG_SIZE),
     batch_size=BATCH_SIZE,
     class_mode='categorical',
     shuffle=True,
-    seed=42
+    seed=42,
+    subset='training'
 )
 
+# Generator pentru validare (20% din folderul Training)
+val_generator = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=(IMG_SIZE, IMG_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode='categorical',
+    shuffle=False,
+    seed=42,
+    subset='validation'
+)
+
+# Generator exclusiv pentru testare finală (folderul Test complet separat)
 test_generator = test_datagen.flow_from_directory(
     test_dir,
     target_size=(IMG_SIZE, IMG_SIZE),
@@ -250,6 +241,7 @@ test_generator = test_datagen.flow_from_directory(
 
 print("\n Data generators created successfully!")
 print(f"training samples: {train_generator.samples}")
+print(f"validation samples: {val_generator.samples}")
 print(f"test samples: {test_generator.samples}")
 print(f"number of classes: {train_generator.num_classes}")
 
@@ -269,7 +261,7 @@ model.summary()
 # compile the model
 print("\n compiling model...")
 model.compile(
-    optimizer=Adam(learning_rate=0.001),
+    optimizer=Adam(learning_rate=0.0001),   # ← 0.001 → 0.0001 pentru fine-tuning
     loss='categorical_crossentropy',
     metrics=['accuracy']
 )
@@ -279,36 +271,36 @@ print("=" * 60)
 print("Configuring training callbacks")
 print("=" * 60)
 
+
 # create callbacks for intelligent training
 callbacks = [
-
-    # early stopping
+    # EarlyStopping pe val_loss — patience 10 (imagini deja augmentate extern)
     EarlyStopping(
-        monitor='loss',
-        patience=7,
+        monitor='val_loss',
+        patience=10,
         restore_best_weights=True,
         verbose=1,
         mode='min'
     ),
 
-    # reduce lr
+    # ReduceLR pe val_loss — factor 0.3, patience 5
     ReduceLROnPlateau(
-        monitor='loss',
-        factor=0.2,
-        patience=3,
+        monitor='val_loss',
+        factor=0.3,
+        patience=5,
         min_lr=1e-7,
         verbose=1,
         mode='min'
     ),
 
-    # save best model
-    ModelCheckpoint(
-        filepath='best_fruit_model.h5',
-        monitor='accuracy',
-        save_best_only=True,
-        mode='max',
-        verbose=1
-    )
+    # Salvează cel mai bun model pe val_accuracy
+ModelCheckpoint(
+    filepath=os.path.join(SAVE_DIR, 'best_fruit_model.h5'),  # ✓ cale completă
+    monitor='val_accuracy',
+    save_best_only=True,
+    mode='max',
+    verbose=1
+)
 ]
 
 print("\n callbacks configured:")
@@ -335,6 +327,8 @@ if not SKIP_TRAINING:
         train_generator,
         steps_per_epoch=train_generator.samples // BATCH_SIZE,
         epochs=EPOCHS,
+        validation_data=val_generator,
+        validation_steps=max(1, val_generator.samples // BATCH_SIZE), # Adăugat max(1, ...) pentru a evita eroarea la batch-uri mici
         callbacks=callbacks,
         verbose=1
     )
@@ -342,33 +336,78 @@ if not SKIP_TRAINING:
     print("\nTraining completed!")
 else:
     print("\nTraining skipped!")
+    # Afișează graficul din rularea anterioară dacă există
+    import json, os
+    hist_path = os.path.join(SAVE_DIR, 'training_history.json')
+    img_path  = os.path.join(SAVE_DIR, 'training_curves.png')
+    if os.path.exists(img_path):
+        img = plt.imread(img_path)
+        plt.figure(figsize=(14, 5))
+        plt.imshow(img)
+        plt.axis('off')
+        plt.tight_layout()
+        plt.show()
+        print("✓ Grafic din antrenarea anterioară afișat.")
+    elif os.path.exists(hist_path):
+        with open(hist_path) as hf:
+            hist_data = json.load(hf)
+        history = type('obj', (object,), {'history': hist_data})()
 
 if history is not None:
-    # training history plotting
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    def smooth(values, alpha=0.7):
+        """Exponential moving average — netezește curbele fără a modifica datele reale."""
+        smoothed = []
+        last = values[0]
+        for v in values:
+            last = alpha * last + (1 - alpha) * v
+            smoothed.append(last)
+        return smoothed
 
-    # accuracy plotting
-    ax1.plot(history.history['accuracy'], label='Training Accuracy', linewidth=2, color='blue')
-    ax1.set_title('Model Accuracy Over Time', fontsize=14, fontweight='bold')
-    ax1.set_xlabel('Epochs', fontsize=12)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    epochs = range(len(history.history['accuracy']))
+
+    # ── Accuracy ──
+    train_acc = history.history['accuracy']
+    ax1.plot(epochs, smooth(train_acc), label='Train Accuracy', color='steelblue', linewidth=2)
+    ax1.plot(epochs, train_acc, color='steelblue', linewidth=0.5, alpha=0.3)
+    if 'val_accuracy' in history.history:
+        val_acc = history.history['val_accuracy']
+        ax1.plot(epochs, smooth(val_acc), label='Validation Accuracy', color='darkorange', linewidth=2)
+        ax1.plot(epochs, val_acc, color='darkorange', linewidth=0.5, alpha=0.3)
+        all_acc = train_acc + val_acc
+    else:
+        all_acc = train_acc
+    ax1.set_title('Accuracy', fontsize=14, fontweight='bold')
+    ax1.set_xlabel('Epoch', fontsize=12)
     ax1.set_ylabel('Accuracy', fontsize=12)
+    ax1.set_ylim(max(0, min(all_acc) - 0.05), 1.01)
     ax1.legend(fontsize=11)
     ax1.grid(True, alpha=0.3)
 
-    # loss plotting
-    ax2.plot(history.history['loss'], label='Training Loss', linewidth=2, color='blue')
-    ax2.set_title('Model Loss Over Time', fontsize=14, fontweight='bold')
-    ax2.set_xlabel('Epochs', fontsize=12)
+    # ── Loss ──
+    train_loss = history.history['loss']
+    ax2.plot(epochs, smooth(train_loss), label='Train Loss', color='steelblue', linewidth=2)
+    ax2.plot(epochs, train_loss, color='steelblue', linewidth=0.5, alpha=0.3)
+    if 'val_loss' in history.history:
+        val_loss = history.history['val_loss']
+        ax2.plot(epochs, smooth(val_loss), label='Validation Loss', color='darkorange', linewidth=2)
+        ax2.plot(epochs, val_loss, color='darkorange', linewidth=0.5, alpha=0.3)
+    ax2.set_title('Loss', fontsize=14, fontweight='bold')
+    ax2.set_xlabel('Epoch', fontsize=12)
     ax2.set_ylabel('Loss', fontsize=12)
     ax2.legend(fontsize=11)
     ax2.grid(True, alpha=0.3)
 
     plt.tight_layout()
+    save_fig('training_curves.png')
     plt.show()
 
     print("\nTraining Summary:")
-    print(f"Final training accuracy: {history.history['accuracy'][-1]:.4f}")
-    print(f"Final training loss: {history.history['loss'][-1]:.4f}")
+    print(f"Final train accuracy     : {history.history['accuracy'][-1]:.4f}")
+    print(f"Final train loss         : {history.history['loss'][-1]:.4f}")
+    if 'val_accuracy' in history.history:
+        print(f"Final validation accuracy: {history.history['val_accuracy'][-1]:.4f}")
+        print(f"Final validation loss    : {history.history['val_loss'][-1]:.4f}")
 else:
     print("\nNo training history available because training was skipped.")
 
@@ -378,7 +417,7 @@ print("=" * 60)
 
 if SKIP_TRAINING:
     print("Loading best model from checkpoint...")
-    best_model = load_model(r'D:\Master\ACABI\Clasificare_fructe\best_fruit_model.h5')
+    best_model = load_model(os.path.join(SAVE_DIR, 'best_fruit_model.h5'))
     print("Best model loaded successfully!")
 else:
     best_model = model
@@ -527,12 +566,13 @@ if len(cm_true) > 0:
         annot_kws={'size': 10}
     )
 
-    plt.title('confusion Matrix (First 15 Classes)', fontsize=16, fontweight='bold', pad=20)
-    plt.xlabel('predicted Label', fontsize=14)
-    plt.ylabel('true Label', fontsize=14)
+    plt.title('Confusion Matrix (First 15 Classes)', fontsize=16, fontweight='bold', pad=20)
+    plt.xlabel('Predicted Label', fontsize=14)
+    plt.ylabel('True Label', fontsize=14)
     plt.xticks(rotation=45, ha='right', fontsize=10)
     plt.yticks(fontsize=10)
     plt.tight_layout()
+    save_fig('confusion_matrix_15classes.png')
     plt.show()
 
     # calculate confusion matrix statistics
@@ -579,12 +619,13 @@ else:
         yticklabels=top_15_names,
         annot_kws={'size': 10}
     )
-    plt.title('confusion Matrix (Top 15 Most Frequent Classes)', fontsize=16, fontweight='bold', pad=20)
-    plt.xlabel('predicted Label', fontsize=14)
+    plt.title('Confusion Matrix (Top 15 Most Frequent Classes)', fontsize=16, fontweight='bold', pad=20)
+    plt.xlabel('Predicted Label', fontsize=14)
     plt.ylabel('True Label', fontsize=14)
     plt.xticks(rotation=45, ha='right', fontsize=10)
     plt.yticks(fontsize=10)
     plt.tight_layout()
+    save_fig('confusion_matrix_top15.png')
     plt.show()
 
 print("=" * 60)
@@ -631,9 +672,10 @@ for i in range(total_tested):
     axes[i].set_title(title, color=color, fontsize=9, fontweight='bold')
     axes[i].axis('off')
 
-plt.suptitle('odel predoction on test mages (Green=Correct, Red=Incorrect)',
+plt.suptitle('Model Predictions on Test Images (Green=Correct, Red=Incorrect)',
              fontsize=16, fontweight='bold', y=1.02)
 plt.tight_layout()
+save_fig('sample_predictions_10.png')
 plt.show()
 
 print(f"\nSample Test Results:")
@@ -706,7 +748,7 @@ for i in range(total_tested):
             status = "Right"
             color = 'green'
         else:
-            status = 'wrong'
+            status = 'Wrong'
             color = 'red'
 
         # Display first 20 images only
@@ -733,6 +775,7 @@ for j in range(display_count, len(axes)):
 plt.suptitle(f'Sample Predictions (Showing {display_count} of {total_tested} images)',
              fontsize=16, fontweight='bold')
 plt.tight_layout()
+save_fig('sample_predictions_200.png')
 plt.show()
 
 print("\n" + "=" * 60)
@@ -750,12 +793,12 @@ print("RESULTS SUMMARY AND MODEL SAVING")
 print("=" * 60)
 
 # Save the final model
-final_model_path = r'D:\Master\ACABI\Clasificare_fructe\fruits360_final_model.keras'
+final_model_path = os.path.join(SAVE_DIR, 'fruits360_final_model.keras')
 best_model.save(final_model_path)
 print(f"Final model saved to: {final_model_path}")
 
 # Also save a backup in .h5 format
-h5_backup_path = r'D:\Master\ACABI\Clasificare_fructe\fruits360_final_model.h5'
+h5_backup_path = os.path.join(SAVE_DIR, 'fruits360_final_model.h5')
 best_model.save(h5_backup_path)
 print(f"Backup model saved to: {h5_backup_path}")
 
@@ -768,9 +811,9 @@ try:
         'loss': [float(x) for x in history.history['loss']],
         'val_loss': [float(x) for x in history.history['val_loss']]
     }
-    with open(r'D:\Master\ACABI\Clasificare_fructe\training_history.json', 'w') as f:
+    with open(os.path.join(SAVE_DIR, 'training_history.json'), 'w') as f:
         json.dump(history_dict, f)
-    print("Training history saved to: /kaggle/working/training_history.json")
+    print("Training history saved.")
     history_exists = True
 except (NameError, AttributeError, KeyError):
     print("Training history not available - skipping history save")
@@ -832,24 +875,25 @@ PERFORMANCE METRICS:
    • Achieved: {test_accuracy*100:.2f}%
    • Status: {' PASSED' if test_accuracy > 0.80 else ' NOT MET'}
 
-   SAVED FILES:
-   • Best Model: /kaggle/working/best_fruit_model.h5
-   • Final Model (Keras): /kaggle/working/fruits360_final_model.keras
-   • Final Model (H5 backup): /kaggle/working/fruits360_final_model.h5
-   • Results Summary: /kaggle/working/results_summary.txt
+IMAGINI SALVATE:
+   • dataset_sample_images.png
+   • training_curves.png
+   • confusion_matrix_15classes.png  (sau confusion_matrix_top15.png)
+   • sample_predictions_10.png
+   • sample_predictions_200.png
 """
 
 if history_exists:
-    summary += f"   • Training History: /kaggle/working/training_history.json\n"
+    summary += "   • training_history.json\n"
 
 print(summary)
 
 # Save summary to file
-with open(r'D:\Master\ACABI\Clasificare_fructe\results_summary.txt', 'w') as f:
+with open(os.path.join(SAVE_DIR, 'results_summary.txt'), 'w') as f:
     f.write(summary)
 
-print("\nAll files saved in /kaggle/working/:")
-for file in os.listdir(r'D:\Master\ACABI\Clasificare_fructe'):
-    if file.endswith(('.h5', '.keras', '.json', '.txt')):
-        file_size = os.path.getsize(rf'D:\Master\ACABI\Clasificare_fructe\{file}') / (1024 * 1024)
-        print(f"   • {file:35s} ({file_size:.2f} MB)")
+print("\nAll files saved in", SAVE_DIR)
+for file in os.listdir(SAVE_DIR):
+    if file.endswith(('.h5', '.keras', '.json', '.txt', '.png')):
+        file_size = os.path.getsize(os.path.join(SAVE_DIR, file)) / (1024 * 1024)
+        print(f"   • {file:40s} ({file_size:.2f} MB)")
